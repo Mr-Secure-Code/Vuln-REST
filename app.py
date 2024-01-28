@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, render_template_string, make_response
+from flask import Flask,  render_template, request, jsonify, render_template_string, make_response
 import mysql.connector
 import requests
 import jwt
@@ -11,97 +11,6 @@ import shlex
 import subprocess
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
-
-# Database connection details
-host = 'localhost'  # Update with your host
-user = 'root'       # Update with your username
-password = 'root'   # Update with your password
-
-# Establishing the connection
-conn = mysql.connector.connect(
-    host=host,
-    user=user,
-    password=password
-)
-
-try:
-    if conn.is_connected():
-        print('Connected to MySQL database')
-        cursor = conn.cursor()
-
-        # Create and use the database
-        cursor.execute("CREATE DATABASE IF NOT EXISTS rest_apisec;")
-        cursor.execute("USE rest_apisec;")
-
-        # Create the rest_user table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS rest_user (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                password VARCHAR(255) NOT NULL,
-                email VARCHAR(255) NOT NULL,
-                role VARCHAR(255) NOT NULL
-            );
-        """)
-
-        # Insert sample data into rest_user
-        cursor.execute("""
-            INSERT INTO rest_user (name, password, email, role) VALUES
-                ('user', '1rdTeqlm2g', 'user@mail.com', 'user'),
-                ('admin', '9yRyb5P9k7', 'admin@mail.com', 'admin');
-        """)
-
-        # Add 'DESCRIPTION' column to 'rest_user' table
-        cursor.execute("ALTER TABLE rest_user ADD COLUMN DESCRIPTION VARCHAR(255);")
-
-        # Add 'api_key' column to 'rest_user' table
-        cursor.execute("ALTER TABLE rest_user ADD COLUMN api_key VARCHAR(16);")
-
-        # Update 'api_key' with random 16-bit key for existing users
-        cursor.execute("UPDATE rest_user SET api_key = SUBSTRING(MD5(RAND()), 1, 16);")
-
-        # Display the updated table structure
-        cursor.execute("DESCRIBE rest_user;")
-        print("Table structure for 'rest_user':")
-        for row in cursor.fetchall():
-            print(row)
-
-        # Create the old_db table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS old_db (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                username VARCHAR(255) NOT NULL,
-                password VARCHAR(255) NOT NULL,
-                email VARCHAR(255) NOT NULL,
-                admin INT DEFAULT 1,
-                api_key VARCHAR(32) DEFAULT NULL,
-                chat VARCHAR(255) DEFAULT NULL
-            );
-        """)
-
-        # Insert sample data into old_db
-        cursor.execute("""
-            INSERT INTO old_db (username, password, email, admin, api_key, chat)
-            VALUES
-                ('admin', '404mJX6ez3', 'admin@mail.com', 0, '7N6X50Ev14WcoX851023x4242pW10IyT', 'I am admin user'),
-                ('user', 'U4gOSJ7OS9', 'user@mail.com', 1, 'pgO3Lo4MqQiK6Mg0w0k587O258d47FaE', 'I am a normal user');
-        """)
-
-        # Add 'session' column to 'old_db' table
-        cursor.execute("ALTER TABLE old_db ADD COLUMN session VARCHAR(255);")
-
-        print("Script executed successfully.")
-
-except mysql.connector.Error as err:
-    print(f"Error: {err}")
-
-finally:
-    if conn.is_connected():
-        cursor.close()
-        conn.close()
-        print('MySQL connection is closed')
-
-
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -131,6 +40,7 @@ def generate_token(user_id, name):
     }
     return jwt.encode(payload, secret_key, algorithm='HS256')
 
+
 # Route for the main page
 @app.route('/')
 def main_page():
@@ -144,7 +54,7 @@ def api2():
 # API2 user endpoint
 @app.route('/api2/user')
 def api2_user():
-    return jsonify({'message': 'Welcome to Vuln-REST'}), 200
+    return jsonify({'message': 'Welcome to Vul-Rest'}), 200
 
 
 # Register endpoint
@@ -250,7 +160,7 @@ def api2_profile():
                 existing_user = cursor.fetchone()
 
                 if existing_user:
-                    return jsonify({'error': 'User already exists'}), 400
+                    return jsonify({'error': 'Email or username already exists'}), 400
 
                 cursor.execute('UPDATE rest_user SET email = %s, name = %s WHERE id = %s',
                                (new_email, new_name, user_id))
@@ -369,7 +279,7 @@ def api2_update_password():
             connection.close()
 
 # User chat endpoint
-@app.route('/api2/user/chat', methods=['GET'])
+@app.route('/api2/chat', methods=['GET'])
 def api2_user_chat():
     # Get token from Authorization header
     token = request.headers.get('Authorization')
@@ -525,6 +435,15 @@ class User:
         self.admin = admin
         self.chat = chat
 
+
+# User class definition
+class User:
+    def __init__(self, username, email, admin, chat):
+        self.username = username
+        self.email = email
+        self.admin = admin
+        self.chat = chat
+
 # Endpoint to register a new user
 @app.route('/api1/user/register', methods=['POST'])
 def register():
@@ -600,6 +519,8 @@ def execute_command(command):
         # Handle any exceptions that may occur during command execution
         return f"Error: {str(e)}"
 
+
+import os
 
 # Endpoint to retrieve user profile and update user profile
 @app.route('/api1/user/profile', methods=['GET', 'POST'])
@@ -680,7 +601,6 @@ def all_chats():
     chats_list = [{'username': chat['username'], 'chat': chat['chat']} for chat in all_chats]
 
     return jsonify({'chats': chats_list}), 200
-
 
 # Run the application
 if __name__ == '__main__':
